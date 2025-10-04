@@ -324,7 +324,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             child:
                                 GlassButton(
                                       width: double.infinity,
-                                      height: 50,
+                                      height: 70, // Increased height
                                       backgroundColor: Colors.white,
                                       opacity: 0.3,
                                       onTap: () {

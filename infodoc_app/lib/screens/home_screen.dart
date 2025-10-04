@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
+import 'package:image_picker/image_picker.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/animated_background.dart';
 import '../models/input_type.dart';
@@ -108,9 +109,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _navigateToInput(InputType type) {
+  void _navigateToInput(InputType type) async {
     _toggleMenu();
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 300), () async {
       Widget destination;
 
       switch (type) {
@@ -118,6 +119,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           destination = const TextInputScreen();
           break;
         case InputType.camera:
+          // Pick image from camera
+          final picker = ImagePicker();
+          final pickedFile = await picker.pickImage(source: ImageSource.camera);
+          if (pickedFile != null) {
+            // Pass the image to your preview screen or handle as needed
+            destination = InputPreviewScreen(
+              inputType: type,
+              imagePath: pickedFile.path,
+            );
+          } else {
+            // User cancelled, do nothing or show a message
+            return;
+          }
+          break;
         case InputType.audio:
         case InputType.video:
         case InputType.upload:
@@ -135,16 +150,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 curve: Curves.easeInOut,
               ),
               child: SlideTransition(
-                position:
-                    Tween<Offset>(
-                      begin: const Offset(0, 0.3),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      ),
-                    ),
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.3),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
                 child: ScaleTransition(
                   scale: Tween<double>(begin: 0.9, end: 1.0).animate(
                     CurvedAnimation(
@@ -217,73 +231,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Expanded(
                 child: Column(
                   children: [
-                    // Recent history section
-                    Container(
-                      height: 180,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Recent Verifications",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    // View all history
-                                  },
-                                  child: Text(
-                                    "View All",
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.blue.withOpacity(0.8),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 15),
-                          Expanded(
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              itemCount: _recentHistory.length,
-                              itemBuilder: (context, index) {
-                                return AnimationConfiguration.staggeredList(
-                                  position: index,
-                                  duration: const Duration(milliseconds: 400),
-                                  child: SlideAnimation(
-                                    horizontalOffset: 50.0,
-                                    child: FadeInAnimation(
-                                      child: Container(
-                                        width: 200,
-                                        margin: const EdgeInsets.only(
-                                          right: 15,
-                                        ),
-                                        child: _recentHistory[index],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     // Central floating button and radial menu
                     Expanded(
                       child: Stack(
@@ -431,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             ),
                                           ),
                                         ),
-                                      ),
+                                      )
                                     );
                                   },
                                 ),
@@ -481,56 +428,54 @@ class InputOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-          onTap: () {
-            // Add haptic feedback
-            // HapticFeedback.lightImpact();
-            onTap();
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.2),
-                  blurRadius: 15,
-                  spreadRadius: 1,
+      onTap: () {
+        // Add haptic feedback
+        // HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.2),
+              blurRadius: 15,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: GlassCard(
+          width: 110, // Increased from 80
+          height: 110, // Increased from 80
+          isCircular: true,
+          backgroundColor: color,
+          opacity: 0.3,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 36), // Optionally increase icon size
+              const SizedBox(height: 8), // Optionally increase spacing
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14, // Optionally increase font size
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
-            child: GlassCard(
-              width: 80,
-              height: 80,
-              isCircular: true,
-              backgroundColor: color,
-              opacity: 0.3,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: Colors.white, size: 28),
-                  const SizedBox(height: 4),
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
+            ],
           ),
-        )
-        .animate()
-        .scale(duration: 150.ms, curve: Curves.easeInOut)
-        .then()
-        .fadeIn(duration: 300.ms, curve: Curves.easeInOut);
+        ),
+      ),
+    )
+    .animate()
+    .scale(duration: 150.ms, curve: Curves.easeInOut)
+    .then()
+    .fadeIn(duration: 300.ms, curve: Curves.easeInOut);
   }
 }
 
@@ -599,9 +544,23 @@ class HistoryItem extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
-              ),
-              Text(
-                time,
+              ),             ),
+              Text(              Text(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}  }    );      ),        ],          ),            ],              ),                ),                  fontSize: 12,                  color: Colors.white.withOpacity(0.7),                style: TextStyle(                time,                time,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.6),
                   fontSize: 10,
