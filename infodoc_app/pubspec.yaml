@@ -51,6 +51,10 @@ dependencies:
   # Image picking
   image_picker: ^1.2.0
 
+  # OCR - Google ML Kit (more reliable)
+  google_mlkit_text_recognition: ^0.13.0
+  permission_handler: ^11.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

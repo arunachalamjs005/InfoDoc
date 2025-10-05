@@ -4,6 +4,8 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/animated_background.dart';
 import '../models/input_type.dart';
@@ -109,6 +111,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  Future<bool> _requestPermissions(InputType type) async {
+    if (type == InputType.camera) {
+      final status = await Permission.camera.request();
+      return status.isGranted;
+    } else if (type == InputType.upload) {
+      // Request storage permissions
+      if (await Permission.photos.isGranted) {
+        return true;
+      }
+      
+      final status = await Permission.photos.request();
+      if (status.isGranted) {
+        return true;
+      }
+      
+      // Fallback to storage permission for older Android versions
+      final storageStatus = await Permission.storage.request();
+      return storageStatus.isGranted;
+    }
+    return true;
+  }
+
   void _navigateToInput(InputType type) async {
     _toggleMenu();
     Future.delayed(const Duration(milliseconds: 300), () async {
@@ -119,9 +143,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           destination = const TextInputScreen();
           break;
         case InputType.camera:
+          // Request camera permission
+          if (!await _requestPermissions(InputType.camera)) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Camera permission is required'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+          
           // Pick image from camera
           final picker = ImagePicker();
-          final pickedFile = await picker.pickImage(source: ImageSource.camera);
+          final pickedFile = await picker.pickImage(
+            source: ImageSource.camera,
+            imageQuality: 85,
+          );
           if (pickedFile != null) {
             // Pass the image to your preview screen or handle as needed
             destination = InputPreviewScreen(
@@ -133,9 +173,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             return;
           }
           break;
+        case InputType.upload:
+          // Request storage permission
+          if (!await _requestPermissions(InputType.upload)) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Storage permission is required'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+          
+          // Pick image from gallery using ImagePicker (more reliable)
+          final picker = ImagePicker();
+          final pickedFile = await picker.pickImage(
+            source: ImageSource.gallery,
+            imageQuality: 85,
+          );
+          
+          if (pickedFile != null) {
+            destination = InputPreviewScreen(
+              inputType: type,
+              imagePath: pickedFile.path,
+            );
+          } else {
+            // User cancelled
+            return;
+          }
+          break;
         case InputType.audio:
         case InputType.video:
-        case InputType.upload:
           destination = InputPreviewScreen(inputType: type);
           break;
       }
@@ -544,26 +614,12 @@ class HistoryItem extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
-              ),             ),
-              Text(              Text(
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}  }    );      ),        ],          ),            ],              ),                ),                  fontSize: 12,                  color: Colors.white.withOpacity(0.7),                style: TextStyle(                time,                time,
+              ),
+              Text(
+                time,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 10,
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 12,
                 ),
               ),
             ],

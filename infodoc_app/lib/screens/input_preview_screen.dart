@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../widgets/glass_card.dart';
@@ -7,8 +8,13 @@ import 'loading_screen.dart';
 
 class InputPreviewScreen extends StatefulWidget {
   final InputType inputType;
+  final String? imagePath;
 
-  const InputPreviewScreen({super.key, required this.inputType});
+  const InputPreviewScreen({
+    super.key,
+    required this.inputType,
+    this.imagePath,
+  });
 
   @override
   State<InputPreviewScreen> createState() => _InputPreviewScreenState();
@@ -45,10 +51,14 @@ class _InputPreviewScreenState extends State<InputPreviewScreen>
   }
 
   void _proceedToVerification() {
+    // Pass the image path to loading screen for OCR processing
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const LoadingScreen(),
+            LoadingScreen(
+              imagePath: widget.imagePath,
+              inputType: widget.inputType,
+            ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurvedAnimation(
@@ -106,10 +116,15 @@ class _InputPreviewScreenState extends State<InputPreviewScreen>
           borderRadius: BorderRadius.circular(12),
           child: AspectRatio(
             aspectRatio: 3 / 4,
-            child: Image.asset(
-              'assets/template_1.jpg',
-              fit: BoxFit.cover,
-            ),
+            child: widget.imagePath != null
+                ? Image.file(
+                    File(widget.imagePath!),
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    'assets/template_1.jpg',
+                    fit: BoxFit.cover,
+                  ),
           ),
         ),
         const SizedBox(height: 12),
@@ -285,10 +300,15 @@ class _InputPreviewScreenState extends State<InputPreviewScreen>
           borderRadius: BorderRadius.circular(12),
           child: AspectRatio(
             aspectRatio: 3 / 4,
-            child: Image.asset(
-              'assets/template_2.jpg',
-              fit: BoxFit.cover,
-            ),
+            child: widget.imagePath != null
+                ? Image.file(
+                    File(widget.imagePath!),
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    'assets/template_2.jpg',
+                    fit: BoxFit.cover,
+                  ),
           ),
         ),
         const SizedBox(height: 12),

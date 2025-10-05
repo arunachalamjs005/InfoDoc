@@ -7,7 +7,9 @@ import '../widgets/animated_background.dart';
 import 'home_screen.dart';
 
 class ResultsScreen extends StatefulWidget {
-  const ResultsScreen({super.key});
+  final String? extractedText;
+
+  const ResultsScreen({super.key, this.extractedText});
 
   @override
   State<ResultsScreen> createState() => _ResultsScreenState();
@@ -20,27 +22,32 @@ class _ResultsScreenState extends State<ResultsScreen>
   late PageController _pageController;
   int _currentIndex = 0;
 
-  final VerificationResult _result = VerificationResult(
-    source: "AgriFacts",
-    sourceLogo: "🍃",
-    claim: "The submitted image shows a jackfruit (Artocarpus heterophyllus).",
-    verdict: Verdict.true_,
-    confidence: 92,
-    explanation:
-        "Visual features such as large, oblong shape; rough, spiky green rind; and clustered, yellow arils indicate jackfruit. Common in South and Southeast Asia, jackfruit is the largest tree-borne fruit and is often used both unripe (as a vegetable) and ripe (sweet, edible bulbs).",
-    color: Colors.green,
-    probability: 92,
-    truthfulness: "High",
-    trustworthyLinks: [
-      "https://en.wikipedia.org/wiki/Jackfruit",
-      "https://www.britannica.com/plant/jackfruit"
-    ],
-    helplineNumber: "1800-180-1930",
-  );
+  late final VerificationResult _result;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize result with extracted text or default
+    _result = VerificationResult(
+      source: "InfoDoc OCR",
+      sourceLogo: "📄",
+      claim: widget.extractedText ?? "The submitted image shows a jackfruit (Artocarpus heterophyllus).",
+      verdict: Verdict.true_,
+      confidence: widget.extractedText != null ? 95 : 92,
+      explanation: widget.extractedText != null 
+          ? "Text successfully extracted from the image using OCR technology. The extracted content is displayed in the claim section above."
+          : "Visual features such as large, oblong shape; rough, spiky green rind; and clustered, yellow arils indicate jackfruit. Common in South and Southeast Asia, jackfruit is the largest tree-borne fruit and is often used both unripe (as a vegetable) and ripe (sweet, edible bulbs).",
+      color: Colors.green,
+      probability: widget.extractedText != null ? 95 : 92,
+      truthfulness: "High",
+      trustworthyLinks: [
+        "https://en.wikipedia.org/wiki/Optical_character_recognition",
+        "https://github.com/tesseract-ocr/tesseract"
+      ],
+      helplineNumber: "1800-180-1930",
+    );
+    
     _headerController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -98,7 +105,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                               onTap: () =>
                                   Navigator.of(context).pushReplacement(
                                     MaterialPageRoute(
-                                      builder: (context) => const HomeScreen(),
+                                      builder: (context) => HomeScreen(),
                                     ),
                                   ),
                               child: Icon(
@@ -189,7 +196,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                               onTap: () =>
                                   Navigator.of(context).pushReplacement(
                                     MaterialPageRoute(
-                                      builder: (context) => const HomeScreen(),
+                                      builder: (context) => HomeScreen(),
                                     ),
                                   ),
                               child: Padding(

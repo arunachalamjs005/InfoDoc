@@ -338,7 +338,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                                     context,
                                                     animation,
                                                     secondaryAnimation,
-                                                  ) => const HomeScreen(),
+                                                  ) => HomeScreen(),
                                               transitionsBuilder:
                                                   (
                                                     context,

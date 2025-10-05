@@ -4,10 +4,19 @@ import 'package:lottie/lottie.dart';
 import 'dart:math' as math;
 import '../widgets/glass_card.dart';
 import '../widgets/animated_background.dart';
+import '../models/input_type.dart';
+import '../services/ocr_service.dart';
 import 'results_screen.dart';
 
 class LoadingScreen extends StatefulWidget {
-  const LoadingScreen({super.key});
+  final String? imagePath;
+  final InputType? inputType;
+
+  const LoadingScreen({
+    super.key,
+    this.imagePath,
+    this.inputType,
+  });
 
   @override
   State<LoadingScreen> createState() => _LoadingScreenState();
@@ -17,6 +26,9 @@ class _LoadingScreenState extends State<LoadingScreen>
     with TickerProviderStateMixin {
   late AnimationController _textController;
   late AnimationController _progressController;
+  String _statusText = "Initializing...";
+  String? _extractedText;
+  bool _isProcessing = true;
 
   @override
   void initState() {
@@ -33,8 +45,77 @@ class _LoadingScreenState extends State<LoadingScreen>
     _textController.forward();
     _progressController.forward();
 
-    // Navigate to results after loading
-    Future.delayed(const Duration(seconds: 5), () {
+    // Start OCR processing if image path is provided
+    _processImage();
+  }
+
+  Future<void> _processImage() async {
+    if (widget.imagePath != null && 
+        (widget.inputType == InputType.camera || widget.inputType == InputType.upload)) {
+      try {
+        setState(() {
+          _statusText = "Extracting text from image...";
+        });
+
+        // Perform OCR
+        final extractedText = await OCRService.extractTextWithProgress(
+          widget.imagePath!,
+          (status) {
+            if (mounted) {
+              setState(() {
+                _statusText = status;
+              });
+            }
+          },
+        );
+
+        setState(() {
+          _extractedText = extractedText;
+          _statusText = "Text extraction complete!";
+          _isProcessing = false;
+        });
+
+        // Wait a bit before navigating
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        // Navigate to results
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  ResultsScreen(extractedText: _extractedText),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position:
+                            Tween<Offset>(
+                              begin: const Offset(0, 1),
+                              end: Offset.zero,
+                            ).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeInOutCubic,
+                              ),
+                            ),
+                        child: child,
+                      ),
+                    );
+                  },
+              transitionDuration: const Duration(milliseconds: 600),
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _statusText = "Error: ${e.toString()}";
+          _isProcessing = false;
+        });
+      }
+    } else {
+      // No image to process, just show loading and navigate
+      await Future.delayed(const Duration(seconds: 3));
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
@@ -63,7 +144,7 @@ class _LoadingScreenState extends State<LoadingScreen>
           ),
         );
       }
-    });
+    }
   }
 
   @override
@@ -159,11 +240,12 @@ class _LoadingScreenState extends State<LoadingScreen>
                       const SizedBox(height: 15),
 
                       Text(
-                            "Cross-referencing with trusted sources",
+                            _statusText,
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.white.withOpacity(0.8),
                             ),
+                            textAlign: TextAlign.center,
                           )
                           .animate(controller: _textController)
                           .slideY(
