@@ -11,6 +11,7 @@ import '../widgets/animated_background.dart';
 import '../models/input_type.dart';
 import 'input_preview_screen.dart';
 import 'text_input_screen.dart';
+import 'audio_input_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -205,6 +206,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }
           break;
         case InputType.audio:
+          destination = const AudioInputScreen();
+          break;
         case InputType.video:
           destination = InputPreviewScreen(inputType: type);
           break;

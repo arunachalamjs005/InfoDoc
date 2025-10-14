@@ -11,11 +11,13 @@ import 'results_screen.dart';
 class LoadingScreen extends StatefulWidget {
   final String? imagePath;
   final InputType? inputType;
+  final String? preExtractedText; // when audio transcription already done
 
   const LoadingScreen({
     super.key,
     this.imagePath,
     this.inputType,
+    this.preExtractedText,
   });
 
   @override
@@ -45,8 +47,43 @@ class _LoadingScreenState extends State<LoadingScreen>
     _textController.forward();
     _progressController.forward();
 
-    // Start OCR processing if image path is provided
-    _processImage();
+    // If we got text already (e.g., from audio transcription), use it directly
+    if (widget.preExtractedText != null && widget.preExtractedText!.trim().isNotEmpty) {
+      _useProvidedTextAndNavigate(widget.preExtractedText!.trim());
+    } else {
+      // Start OCR processing if image path is provided
+      _processImage();
+    }
+  }
+
+  Future<void> _useProvidedTextAndNavigate(String text) async {
+    setState(() {
+      _statusText = "Using transcribed text...";
+      _extractedText = text;
+      _isProcessing = false;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ResultsScreen(extractedText: _extractedText),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeInOutCubic),
+              ),
+              child: child,
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 600),
+      ),
+    );
   }
 
   Future<void> _processImage() async {
@@ -114,36 +151,27 @@ class _LoadingScreenState extends State<LoadingScreen>
         });
       }
     } else {
-      // No image to process, just show loading and navigate
-      await Future.delayed(const Duration(seconds: 3));
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const ResultsScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: const Offset(0, 1),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeInOutCubic,
-                            ),
-                          ),
-                      child: child,
-                    ),
-                  );
-                },
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-      }
+      // No image to process, check if we had text provided (already handled above)
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              ResultsScreen(extractedText: _extractedText),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeInOutCubic),
+                ),
+                child: child,
+              ),
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 600),
+        ),
+      );
     }
   }
 
